@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">AnythingGroup</string>
+
+    <string name="todo">TODO</string>
+    <string name="title_field_name_rus">Русское название:\u0020</string>
+    <string name="title_field_country">Страна:\u0020</string>
+    <string name="title_field_episodes">Эпизоды:\u0020</string>
+    <string name="title_field_release_year">Год выпуска:\u0020</string>
+    <string name="title_field_age_rating">Рейтинг:\u0020</string>
+    <string name="title_field_genres">Жанры:\u0020</string>
+    <string name="title_field_duration">Продолжительность:\u0020</string>
+    <string name="title_field_description">Описание:\u0020</string>
+    <string name="title_field_sound">Работа со звуком:\u0020</string>
+    <string name="title_field_tech_support">Техническая поддержка:\u0020</string>
+    <string name="title_field_translation">Перевод:\u0020</string>
+    <string name="title_field_directors">Режиссёр:\u0020</string>
+    <string name="title_field_rating">Оценка:\u0020</string>
+    <string name="title_field_your_rating">Ваша оценка:\u0020</string>
+    <string name="title_field_thanks">Спасибо!:\u0020</string>
+    <string name="title_field_episode_list">Список серий:\u0020</string>
+    <string name="title_field_plot_authors">Автор сценария:\u0020</string>
+    <string name="title_field_original_author">Автор оригинала:\u0020</string>
+    <string name="title_field_studio">Студия:\u0020</string>
+    <string name="title_field_voicing">Озвучивание:\u0020</string>
+</resources>

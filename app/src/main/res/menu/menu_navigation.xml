@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <group android:checkableBehavior="single">
+<!--        <item-->
+<!--            android:id="@+id/fragment_my_profile"-->
+<!--            android:icon="@drawable/home_icon"-->
+<!--            android:title="Мой профиль" />-->
+        <item
+            android:id="@+id/fragment_news"
+            android:icon="@android:drawable/ic_dialog_dialer"
+            android:title="Новости" />
+        <item
+            android:id="@+id/fragment_releases"
+            android:icon="@drawable/ic_menu_slideshow"
+            android:title="Релизы" />
+
+        <item
+            android:id="@+id/fragment_search"
+            android:icon="@android:drawable/ic_menu_search"
+            android:title="Поиск" />
+
+<!--        <item-->
+<!--            android:id="@+id/fragment_settings"-->
+<!--            android:icon="@drawable/ic_menu_manage"-->
+<!--            android:title="Настройки"/>-->
+
+    </group>
+
+<!--    <item android:title="О проекте">-->
+<!--        <menu>-->
+<!--            <item-->
+<!--                android:id="@+id/nav_share"-->
+<!--                android:icon="@drawable/ic_menu_share"-->
+<!--                android:title="О нас" />-->
+<!--            <item-->
+<!--                android:id="@+id/nav_send"-->
+<!--                android:icon="@android:drawable/ic_menu_myplaces"-->
+<!--                android:title="Команда проекта" />-->
+<!--        </menu>-->
+<!--    </item>-->
+</menu>

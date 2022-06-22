@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@id/fragment_news">
+
+    <fragment
+        android:id="@+id/fragment_news"
+        android:name="com.example.AnythingGroup.fragments.news.NewsFragment"
+        android:label="Новости"
+        tools:layout="@layout/news_subfragment">
+        <action
+            android:id="@+id/action_fragment_news_to_fragment_title"
+            app:destination="@id/fragment_title"
+            app:popUpTo="@id/fragment_news" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/fragment_my_profile"
+        android:name="com.example.AnythingGroup.fragments.my_profile.MyProfileFragment"
+        android:label=""
+        tools:layout="@layout/my_profile_fragment">
+        <action
+            android:id="@+id/action_fragment_my_profile_to_fragment_title"
+            app:destination="@id/fragment_title"
+            app:popUpTo="@id/fragment_my_profile" />
+        <action
+            android:id="@+id/action_fragment_my_profile_to_fragment_authorization"
+            app:destination="@id/fragment_authorization"
+            app:popUpTo="@id/fragment_my_profile" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/fragment_search"
+        android:name="com.example.AnythingGroup.fragments.search.SearchFragment"
+        android:label="Поиск">
+        <action
+            android:id="@+id/action_searchFragment_to_fragment_title"
+            app:destination="@id/fragment_title"
+            app:popUpTo="@id/fragment_search" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/fragment_authorization"
+        android:name="com.example.AnythingGroup.fragments.authorization.AuthorizationFragment"
+        android:label="Авторизация">
+        <action
+            android:id="@+id/action_fragment_authorization_to_fragment_authorization_restore"
+            app:destination="@id/fragment_authorization_restore" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/fragment_authorization_restore"
+        android:name="com.example.AnythingGroup.fragments.authorization.RestoreFragment"
+        android:label="Восстановление"/>
+
+    <fragment
+        android:id="@+id/fragment_releases"
+        android:name="com.example.AnythingGroup.fragments.releases.ReleaseFragment"
+        android:label="Релизы" >
+        <action
+            android:id="@+id/action_fragment_releases_to_fragment_title"
+            app:destination="@id/fragment_title"
+            app:popUpTo="@id/fragment_releases" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/fragment_title"
+        android:name="com.example.AnythingGroup.fragments.title.TitleFragment"
+        android:label=""
+        tools:layout="@layout/title_fragment" >
+        <action
+            android:id="@+id/action_fragment_title_to_videoChannelFragment"
+            app:destination="@id/videoChannelFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/videoChannelFragment"
+        android:name="com.example.AnythingGroup.fragments.video.VideoChannelFragment"
+        android:label="Видео канал" />
+</navigation>
