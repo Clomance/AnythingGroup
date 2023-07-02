@@ -9,8 +9,8 @@ import androidx.work.WorkerParameters;
 import com.example.AnythingGroup.AppBase;
 import com.example.AnythingGroup.CommentData;
 import com.example.AnythingGroup.LoadWorker;
+import com.example.AnythingGroup.Network;
 
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -26,7 +26,7 @@ public class TitleLoadWorker extends LoadWorker {
     public Result Work(Data input) throws IOException{
         String title_reference = input.getString("title_reference");
 
-        Document document = Jsoup.connect(Objects.requireNonNull(title_reference)).get();
+        Document document = Network.get(Objects.requireNonNull(title_reference));
 
         if (AppBase.title.name_jp == null){
             Element content = document.getElementById("controller_wrap");

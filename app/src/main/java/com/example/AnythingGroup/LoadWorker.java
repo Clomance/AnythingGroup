@@ -33,6 +33,7 @@ public abstract class LoadWorker extends Worker {
             }
         }
         catch (org.jsoup.HttpStatusException e){
+            e.printStackTrace();
             if (e.getStatusCode() == 404){
                 error.putInt("error_code", e.getStatusCode());
             }

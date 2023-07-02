@@ -19,7 +19,7 @@ import com.example.AnythingGroup.fragments.authorization.SignInSubfragment;
 
 /// Стартовая активность.
 /// Загружает необходымые данные.
-/// Пока что отвечает за автоматический вход.
+/// Отвечает за автоматический вход.
 public class StartActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {

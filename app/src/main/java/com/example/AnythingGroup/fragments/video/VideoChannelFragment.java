@@ -33,7 +33,7 @@ public class VideoChannelFragment extends Fragment implements SwipeRefreshLayout
     String video_channel_reference;
 
     // Основание списка из видео
-    LinearLayout video_list_view;
+    LinearLayout listView;
 
     TextView error_view;
 
@@ -45,7 +45,7 @@ public class VideoChannelFragment extends Fragment implements SwipeRefreshLayout
 
         error_view = root.findViewById(R.id.error_view);
         video_list_refresh = root.findViewById(R.id.video_list_refresh);
-        video_list_view = root.findViewById(R.id.video_list);
+        listView = root.findViewById(R.id.video_list);
 
         video_list_refresh.setOnRefreshListener(this);
         video_list_refresh.setEnabled(true);
@@ -84,7 +84,7 @@ public class VideoChannelFragment extends Fragment implements SwipeRefreshLayout
     @Override
     public void onRefresh() {
         error_view.setVisibility(View.GONE);
-        video_list_view.removeAllViews();
+        listView.removeAllViews();
 
         AppBase.videoChannelList.clear();
 
@@ -119,7 +119,7 @@ public class VideoChannelFragment extends Fragment implements SwipeRefreshLayout
 
             view.setOnClickListener(this::openVideoPlayerPage);
 
-            video_list_view.addView(view);
+            listView.addView(view);
         }
     }
 
@@ -157,21 +157,25 @@ public class VideoChannelFragment extends Fragment implements SwipeRefreshLayout
         workManager.enqueue(loadWorkRequest);
 
         // Подключение функции для ожидания завершения загрузки
-        workManager.getWorkInfoByIdLiveData(video_channel_load_worker_id)
-                .observe(getViewLifecycleOwner(), workInfo -> {
-                    if (workInfo.getState() == WorkInfo.State.SUCCEEDED) {
-                        setVideoChannel();
-                    }
-                    else if (workInfo.getState() == WorkInfo.State.FAILED){
-                        String error = workInfo.getOutputData().getString("error");
-                        error_view.setText(error);
-                        error_view.setVisibility(View.VISIBLE);
-                    }
-                    else{
-                        return;
-                    }
+        workManager.getWorkInfoByIdLiveData(video_channel_load_worker_id).observe(
+                getViewLifecycleOwner(),
+                workInfo -> {
+                    if (listView == null) return;
+                    listView.post(() -> {
+                        if (workInfo.getState() == WorkInfo.State.SUCCEEDED) {
+                            setVideoChannel();
+                        }
+                        else if (workInfo.getState() == WorkInfo.State.FAILED){
+                            String error = workInfo.getOutputData().getString("error");
+                            error_view.setText(error);
+                            error_view.setVisibility(View.VISIBLE);
+                        }
+                        else{
+                            return;
+                        }
 
-                    video_list_refresh.setRefreshing(false);
+                        video_list_refresh.setRefreshing(false);
+                    });
                 });
     }
 }

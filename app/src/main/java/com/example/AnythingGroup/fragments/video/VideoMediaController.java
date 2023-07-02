@@ -38,7 +38,7 @@ public class VideoMediaController  extends MediaController {
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
         params.gravity = Gravity.END;
         params.rightMargin = 80;
-        params.topMargin = 50;
+        params.topMargin = 40;
 
         // Добавление в интерфейс
         addView(fullscreen_image, params);

@@ -204,39 +204,43 @@ public class NewsReleasesSubfragment extends ContentListFragment {
         super.load_worker_id = loadWorkRequest.getId();
 
         // Подключение функции для ожидания завершения загрузки
-        super.workManager.getWorkInfoByIdLiveData(super.load_worker_id)
-                .observe(getViewLifecycleOwner(), workInfo -> {
-                    switch (workInfo.getState()) {
-                        case SUCCEEDED:
-                            updateList(-1);
-                            break;
+        super.workManager.getWorkInfoByIdLiveData(super.load_worker_id).observe(
+                getViewLifecycleOwner(),
+                workInfo -> {
+                    if (listView == null) return;
+                    listView.post(() -> {
+                        switch (workInfo.getState()) {
+                            case SUCCEEDED:
+                                updateList(-1);
+                                break;
 
-                        case FAILED:
-                            AppBase.releaseNewsPage--;
+                            case FAILED:
+                                AppBase.releaseNewsPage--;
 
-                            String error = workInfo.getOutputData().getString("error");
-                            errorView.setText(error);
-                            errorView.setVisibility(View.VISIBLE);
+                                String error = workInfo.getOutputData().getString("error");
+                                errorView.setText(error);
+                                errorView.setVisibility(View.VISIBLE);
 
-                            // Код ошибки 404 - страница не найдена - обозначает конец списка релизов
-                            int error_code = workInfo.getOutputData().getInt("error_code", 0);
-                            if (error_code == 404) {
-                                Log.wtf("Релизы", "Конец списка");
-                                loaded_all = true;
-                            }
-                            break;
+                                // Код ошибки 404 - страница не найдена - обозначает конец списка релизов
+                                int error_code = workInfo.getOutputData().getInt("error_code", 0);
+                                if (error_code == 404) {
+                                    Log.wtf("Релизы", "Конец списка");
+                                    loaded_all = true;
+                                }
+                                break;
 
-                        case CANCELLED:
-                            AppBase.releaseNewsPage--;
-                            break;
+                            case CANCELLED:
+                                AppBase.releaseNewsPage--;
+                                break;
 
-                        default:
-                            return;
-                    }
+                            default:
+                                return;
+                        }
 
-                    fragment_ready = true;
-                    super.refresh.setRefreshing(false);
-                    super.load_worker_id = null;
+                        fragment_ready = true;
+                        super.refresh.setRefreshing(false);
+                        super.load_worker_id = null;
+                    });
                 });
     }
 

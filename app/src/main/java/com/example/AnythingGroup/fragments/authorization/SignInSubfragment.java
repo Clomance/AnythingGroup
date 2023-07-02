@@ -22,6 +22,7 @@ import androidx.work.WorkerParameters;
 import com.example.AnythingGroup.AppBase;
 import com.example.AnythingGroup.LoadWorker;
 import com.example.AnythingGroup.MainActivity;
+import com.example.AnythingGroup.Network;
 import com.example.AnythingGroup.R;
 
 import org.jsoup.Connection;
@@ -144,36 +145,36 @@ public class SignInSubfragment extends Fragment {
                     .method(Connection.Method.GET)
                     .execute();
 
-            AppBase.cookies = response.cookies();
+            Network.cookies = response.cookies();
 
             Document document = response.parse();
 
             Elements forms = document.getElementsByTag("meta");
 
-            AppBase.token = "";
+            Network.token = "";
             for (Element form: forms){
                 Attributes attributes = form.attributes();
                 if (attributes.get("name").equals("csrf-token")){
-                    AppBase.token = attributes.get("content");
+                    Network.token = attributes.get("content");
                     break;
                 }
             }
-            Log.wtf("token", AppBase.token);
+            Log.wtf("token", Network.token);
 
             response = Jsoup.connect("https://a-g.site/auth/login")
                     .referrer("https://a-g.site/auth/login")
                     .data("login_email", email)
                     .data("login_password", password)
                     .data("remember", "1")
-                    .data("csrf_token", AppBase.token)
+                    .data("csrf_token", Network.token)
                     .data("submit", "Войти")
                     .followRedirects(true)
                     .ignoreHttpErrors(true)
-                    .cookies(AppBase.cookies)
+                    .cookies(Network.cookies)
                     .method(Connection.Method.POST)
                     .execute();
 
-            AppBase.cookies = response.cookies();
+            Network.cookies = response.cookies();
 
             document = response.parse();
 

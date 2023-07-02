@@ -468,26 +468,30 @@ public class TitleFragment extends Fragment implements SwipeRefreshLayout.OnRefr
         workManager.enqueue(loadWorkRequest);
 
         // Подключение функции для ожидания завершения загрузки
-        workManager.getWorkInfoByIdLiveData(title_load_worker_id)
-                .observe(getViewLifecycleOwner(), workInfo -> {
-                    if (workInfo.getState() == WorkInfo.State.SUCCEEDED) {
-                        title_refresh.setRefreshing(false);
+        workManager.getWorkInfoByIdLiveData(title_load_worker_id).observe(
+                getViewLifecycleOwner(),
+                workInfo -> {
+                    if (title_page == null) return;
+                    title_page.post(() -> {
+                        if (workInfo.getState() == WorkInfo.State.SUCCEEDED) {
+                            title_refresh.setRefreshing(false);
 
-                        AppBase.title_loaded = true;
+                            AppBase.title_loaded = true;
 
-                        setTitleInfo();
-                    }
-                    else if (workInfo.getState() == WorkInfo.State.FAILED){
-                        title_refresh.setRefreshing(false);
+                            setTitleInfo();
+                        }
+                        else if (workInfo.getState() == WorkInfo.State.FAILED){
+                            title_refresh.setRefreshing(false);
 
-                        String error = workInfo.getOutputData().getString("error");
-                        title_error.setText(error);
-                        title_error.setVisibility(View.VISIBLE);
-                    }
+                            String error = workInfo.getOutputData().getString("error");
+                            title_error.setText(error);
+                            title_error.setVisibility(View.VISIBLE);
+                        }
+                    });
                 });
     }
 
-    public void openVideoChannelPage(View view){
+    public void openVideoChannelPage(View ignoredView){
         Bundle args = new Bundle();
 
         MainActivity activity = (MainActivity) requireActivity();

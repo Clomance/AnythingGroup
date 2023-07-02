@@ -20,6 +20,7 @@ import androidx.work.WorkerParameters;
 import com.example.AnythingGroup.AppBase;
 import com.example.AnythingGroup.LoadWorker;
 import com.example.AnythingGroup.MainActivity;
+import com.example.AnythingGroup.Network;
 import com.example.AnythingGroup.R;
 
 import org.jsoup.Connection;
@@ -148,10 +149,10 @@ public class MyProfileFragment extends Fragment {
             Connection.Response response = Jsoup.connect("https://a-g.site/users/" + AppBase.ProfileMain.id)
                     .followRedirects(true)
                     .method(Connection.Method.GET)
-                    .cookies(AppBase.cookies)
+                    .cookies(Network.cookies)
                     .execute();
 
-            AppBase.cookies = response.cookies();
+            Network.cookies = response.cookies();
 
             Document document = response.parse();
 

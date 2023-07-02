@@ -9,8 +9,8 @@ import androidx.work.WorkerParameters;
 
 import com.example.AnythingGroup.AppBase;
 import com.example.AnythingGroup.LoadWorker;
+import com.example.AnythingGroup.Network;
 
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -33,7 +33,7 @@ public class VideoChannelLoadWorker extends LoadWorker {
             video_channel_reference = video_channel_reference.replace("http", "https");
         }
 
-        Document document = Jsoup.connect(video_channel_reference).get();
+        Document document = Network.get(video_channel_reference);
 
         Element video_list = document.getElementsByClass("field_movie_list").get(0);
 

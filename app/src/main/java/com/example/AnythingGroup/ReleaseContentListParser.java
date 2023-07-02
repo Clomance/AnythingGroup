@@ -2,7 +2,6 @@ package com.example.AnythingGroup;
 
 import android.graphics.Bitmap;
 
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -14,7 +13,7 @@ public class ReleaseContentListParser {
     public static ArrayList<ContentListItem> parse(String url) throws IOException {
         ArrayList<ContentListItem> items = new ArrayList<>();
 
-        Document document = Jsoup.connect(url).get();
+        Document document = Network.get(url);
 
         Elements release_list = document.getElementsByClass("content_list_item");
 

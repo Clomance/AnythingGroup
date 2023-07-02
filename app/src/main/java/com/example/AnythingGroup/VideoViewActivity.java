@@ -1,6 +1,7 @@
 package com.example.AnythingGroup;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Point;
 import android.media.MediaPlayer;
@@ -19,25 +20,30 @@ import android.widget.TextView;
 import android.widget.VideoView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
+import androidx.work.Data;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkInfo;
 import androidx.work.WorkManager;
+import androidx.work.WorkRequest;
+import androidx.work.WorkerParameters;
 
 import com.example.AnythingGroup.fragments.video.VideoMediaController;
 import com.example.AnythingGroup.fragments.video.WebClient;
 
+import java.io.IOException;
 import java.util.UUID;
 
 public class VideoViewActivity extends AppCompatActivity {
-    private UUID video_channel_load_worker_id = null;
+    private UUID video_source_load_worker_id = null;
 
     // Ссылка на страницу с видео
     String video_player_reference;
-    // Ссылка на само видео или ссылка из iframe
-    String video_reference;
 
     TextView error_view;
 
@@ -60,8 +66,6 @@ public class VideoViewActivity extends AppCompatActivity {
     int videoWidth = 0;
     int videoHeight = 0;
 
-    // Скрипт для получения кода страницы
-    private final String js_get_body = "(function() { return (document.getElementsByTagName('body')[0].innerHTML); })();";
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -100,7 +104,78 @@ public class VideoViewActivity extends AppCompatActivity {
 
         Log.wtf("Video", video_player_reference);
 
-        loadVideoPlayerPage();
+        // Отключение всех элементов интерфейса,
+        // кроме иконки прогресса
+        error_view.setVisibility(View.GONE);
+        web_view.setVisibility(View.GONE);
+        video_view.setVisibility(View.GONE);
+
+        progress_bar.setVisibility(View.VISIBLE);
+
+        AppBase.video_source = null;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        int end = video_player_reference.indexOf("-", 23);
+
+        int id = Integer.parseInt(video_player_reference.substring(23, end));
+
+        WorkRequest loadWorkRequest = new OneTimeWorkRequest
+                .Builder(VideoSourceLoadWorker.class)
+                .setInputData(new Data.Builder().putInt("video_id", id).build())
+                .build();
+
+        WorkManager workManager = WorkManager.getInstance(this);
+        // Добавление процедуры в очередь выполнения
+        workManager.enqueue(loadWorkRequest);
+
+        video_source_load_worker_id = loadWorkRequest.getId();
+
+        // Подключение функции для ожидания завершения загрузки
+        workManager.getWorkInfoByIdLiveData(video_source_load_worker_id).observe(
+                this,
+                workInfo -> {
+                    if (workInfo.getState() != WorkInfo.State.SUCCEEDED) return;
+                    if (web_view == null) return;
+                    if (AppBase.video_source == null) return;
+
+                    web_view.post(() -> {
+                        switch (AppBase.video_source.type){
+                            case StreamingUrl:
+                                // Отлючение иконки загрузки
+                                progress_bar.setVisibility(View.GONE);
+
+                                // Запуск видео
+                                video_view.setVideoURI(Uri.parse(AppBase.video_source.data));
+                                video_view.setVisibility(View.VISIBLE);
+                                video_view.start();
+                                break;
+
+                            case Iframe:
+                                WebViewClient web_visible = new WebViewClient() {
+                                    public void onPageFinished(WebView view, String url) {
+                                        progress_bar.setVisibility(View.GONE);
+                                        Log.wtf("WebView", "Visible");
+                                        view.setVisibility(View.VISIBLE);
+                                    }
+
+                                    @SuppressLint("WebViewClientOnReceivedSslError")
+                                    @Override
+                                    public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error){
+                                        handler.proceed();
+                                    }
+                                };
+
+                                web_view.setWebViewClient(web_visible);
+
+                                web_view.loadUrl(AppBase.video_source.data);
+                                break;
+                        }
+                    });
+                });
     }
 
     @Override
@@ -112,9 +187,9 @@ public class VideoViewActivity extends AppCompatActivity {
 
     @Override
     public void onDestroy() {
-        if (video_channel_load_worker_id != null) {
-            WorkManager.getInstance(this).cancelWorkById(video_channel_load_worker_id);
-            video_channel_load_worker_id = null;
+        if (video_source_load_worker_id != null) {
+            WorkManager.getInstance(this).cancelWorkById(video_source_load_worker_id);
+            video_source_load_worker_id = null;
         }
         super.onDestroy();
     }
@@ -141,109 +216,25 @@ public class VideoViewActivity extends AppCompatActivity {
         video_view.setLayoutParams(params);
     }
 
-    public void loadVideoPlayerPage(){
-        // Отключение всех элементов интерфейса,
-        // кроме иконки прогресса
-        error_view.setVisibility(View.GONE);
-        web_view.setVisibility(View.GONE);
-        video_view.setVisibility(View.GONE);
-
-        progress_bar.setVisibility(View.VISIBLE);
-
-        WebViewClient web_visible = new WebViewClient() {
-            public void onPageFinished(WebView view, String url) {
-                progress_bar.setVisibility(View.GONE);
-                Log.wtf("WebView", "Visible");
-                view.setVisibility(View.VISIBLE);
-            }
-
-            @SuppressLint("WebViewClientOnReceivedSslError")
-            @Override
-            public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error){
-                handler.proceed();
-            }
-        };
-
-        // Обработчик страницы с плеером (на самом сайте a-g)
-        WebViewClient web_handler1 = new WebViewClient() {
-            public void onPageFinished(WebView view, String url) {
-                view.evaluateJavascript(
-                    js_get_body,
-                    html -> {
-                        // Проверка есть ли разобранная ссылка на видео
-                        // Если есть значит видео хранится на a-g.online
-                        int check_video_end = html.indexOf(".mp4");
-
-                        Log.wtf("jw_video", "r: " + check_video_end);
-
-                        if (check_video_end != -1){
-                            // Если check_video_end, то сразу ищем ссылку на видео
-                            int src_end = html.indexOf(".mp4");
-                            int ref_end = src_end + 4;
-                            String html_part = html.substring(0, ref_end);
-                            int ref_start = html_part.lastIndexOf("\"");
-
-                            video_reference = html.substring(ref_start + 1, ref_end);
-                            video_reference = video_reference.replaceAll("\\\\","");
-                            Log.wtf("video_reference", video_reference);
-
-                            // Очистка браузера
-                            view.loadUrl("about:blank");
-                            view.clearCache(false);
-                            view.setWebViewClient(null);
-
-                            // Отлючение иконки загрузки
-                            progress_bar.setVisibility(View.GONE);
-
-                            // Запуск видео
-                            video_view.setVideoURI(Uri.parse(video_reference));
-                            video_view.setVisibility(View.VISIBLE);
-                            video_view.start();
-                        }
-                        else{
-                            // Если не check_video_end, то проверяем дальше
-                            int first_frame = html.indexOf("iframe");
-                            int ref_start = first_frame + 13;
-                            int ref_end = html.indexOf("\"", ref_start) - 1;
-
-                            video_player_reference = html.substring(ref_start, ref_end);
-
-                            if (video_player_reference.contains("vk")){
-                                if (!video_player_reference.contains("https:")){
-                                    video_player_reference = "https:" + video_player_reference;
-                                }
-                                video_player_reference = video_player_reference.replaceAll(";","&");
-                            }
-                            Log.wtf("video_player_reference", video_player_reference);
-
-                            view.setWebViewClient(web_visible);
-                            view.loadUrl(video_player_reference);
-                        }
-                    }
-                );
-            }
-
-            @SuppressLint("WebViewClientOnReceivedSslError")
-            @Override
-            public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error){
-                handler.proceed();
-            }
-        };
-
-        web_view.setWebViewClient(web_handler1);
-
-        web_view.loadUrl(video_player_reference);
-    }
 
     // Показывает/прячет системные панели управления
     // (взято с официального примера: https://developer.android.google.cn/training/system-ui/immersive)
     // Полезная ссылка - https://developer.android.google.cn/training/gestures/edge-to-edge
     public void showSystemBars(boolean show) {
-        WindowInsetsControllerCompat windowInsetsController = ViewCompat.getWindowInsetsController(this.getWindow().getDecorView());
-        if (windowInsetsController == null) {
-            return;
+        View decorView = getWindow().getDecorView();
+        // Hide the status bar.
+        int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
+        decorView.setSystemUiVisibility(uiOptions);
+        // Remember that you should never show the action bar if the
+        // status bar is hidden, so hide that too if necessary.
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null){
+            actionBar.hide();
         }
-        // Configure the behavior of the hidden system bars
+
+        WindowInsetsControllerCompat windowInsetsController =
+                WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+
         windowInsetsController.setSystemBarsBehavior(
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         );
@@ -255,6 +246,21 @@ public class VideoViewActivity extends AppCompatActivity {
         else{
             // Hide both the status bar and the navigation bar
             windowInsetsController.hide(WindowInsetsCompat.Type.systemBars());
+        }
+    }
+
+    public static class VideoSourceLoadWorker extends LoadWorker {
+        public VideoSourceLoadWorker(@NonNull Context context, @NonNull WorkerParameters params) {
+            super(context, params);
+        }
+
+        @Override
+        public Result Work(Data input) throws IOException {
+            int video_id = input.getInt("video_id", -1);
+
+            AppBase.video_source = Network.get_video_source(video_id);
+
+            return null;
         }
     }
 }

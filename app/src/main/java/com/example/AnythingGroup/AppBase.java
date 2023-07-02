@@ -24,6 +24,7 @@ import com.example.AnythingGroup.fragments.my_profile.ProfileMainInfo;
 import com.example.AnythingGroup.fragments.news.NewsListItem;
 import com.example.AnythingGroup.fragments.title.Title;
 import com.example.AnythingGroup.fragments.video.VideoListItem;
+import com.example.AnythingGroup.fragments.video.VideoSource;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -31,7 +32,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 // Хранилище общей информации
 public class AppBase {
@@ -57,10 +57,6 @@ public class AppBase {
 
     // Текущее время года
     public static LogoOption logoOption = LogoOption.Default;
-
-    // Сессия
-    public static String token;
-    public static Map<String, String> cookies;
 
     // Пользователь
     public static ProfileMainInfo ProfileMain = new ProfileMainInfo(); // Основная информация
@@ -108,6 +104,8 @@ public class AppBase {
     public static Title title = new Title();
     // Список видео на канале тайтла
     public static final List<VideoListItem> videoChannelList = new ArrayList<>();
+
+    public static VideoSource video_source;
 
     // ФУНКЦИИ
     public static void getSharedPreferences(Activity activity){

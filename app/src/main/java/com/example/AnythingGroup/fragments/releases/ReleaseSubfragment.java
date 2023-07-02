@@ -264,79 +264,83 @@ public class ReleaseSubfragment extends ContentListFragment {
         super.load_worker_id = loadWorkRequest.getId();
 
         // Подключение функции для ожидания завершения загрузки
-        super.workManager.getWorkInfoByIdLiveData(super.load_worker_id)
-                .observe(getViewLifecycleOwner(), workInfo -> {
-                    switch (workInfo.getState()){
-                        case SUCCEEDED:
-                            updateList(-1);
-                            break;
+        super.workManager.getWorkInfoByIdLiveData(super.load_worker_id).observe(
+                getViewLifecycleOwner(),
+                workInfo -> {
+                    if (listView == null) return;
+                    listView.post(() -> {
+                        switch (workInfo.getState()){
+                            case SUCCEEDED:
+                                updateList(-1);
+                                break;
 
-                        case FAILED:
-                            switch (type){
-                                case 0:
-                                    AppBase.animeReleasePage--;
-                                    break;
-                                case 1:
-                                    AppBase.OVAONASpecialReleasePage--;
-                                    break;
-                                case 2:
-                                    AppBase.movieReleasePage--;
-                                    break;
-                                case 3:
-                                    AppBase.polnyiMetrReleasePage = 0;
-                                    break;
-                                case 4:
-                                    AppBase.documentaryReleasePage = 0;
-                                    break;
-                                case 5:
-                                    AppBase.doramaReleasePage = 0;
-                                    break;
-                            }
+                            case FAILED:
+                                switch (type){
+                                    case 0:
+                                        AppBase.animeReleasePage--;
+                                        break;
+                                    case 1:
+                                        AppBase.OVAONASpecialReleasePage--;
+                                        break;
+                                    case 2:
+                                        AppBase.movieReleasePage--;
+                                        break;
+                                    case 3:
+                                        AppBase.polnyiMetrReleasePage = 0;
+                                        break;
+                                    case 4:
+                                        AppBase.documentaryReleasePage = 0;
+                                        break;
+                                    case 5:
+                                        AppBase.doramaReleasePage = 0;
+                                        break;
+                                }
 
-                            // Код ошибки 404 - страница не найдена - обозначает конец списка релизов
-                            int error_code = workInfo.getOutputData().getInt("error_code", 0);
-                            if (error_code == 404){
-                                Log.wtf("Релизы", "Конец списка");
-                                super.loaded_all = true;
-                            }
-                            else{
-                                String error = workInfo.getOutputData().getString("error");
-                                errorView.setText(error);
-                                errorView.setVisibility(View.VISIBLE);
-                            }
-                            break;
+                                // Код ошибки 404 - страница не найдена - обозначает конец списка релизов
+                                int error_code = workInfo.getOutputData().getInt("error_code", 0);
+                                if (error_code == 404){
+                                    Log.wtf("Релизы", "Конец списка");
+                                    super.loaded_all = true;
+                                }
+                                else{
+                                    String error = workInfo.getOutputData().getString("error");
+                                    errorView.setText(error);
+                                    errorView.setVisibility(View.VISIBLE);
+                                }
+                                break;
 
-                        case CANCELLED:
-                            switch (type){
-                                case 0:
-                                    AppBase.animeReleasePage--;
-                                    break;
-                                case 1:
-                                    AppBase.OVAONASpecialReleasePage--;
-                                    break;
-                                case 2:
-                                    AppBase.movieReleasePage--;
-                                    break;
-                                case 3:
-                                    AppBase.polnyiMetrReleasePage = 0;
-                                    break;
-                                case 4:
-                                    AppBase.documentaryReleasePage = 0;
-                                    break;
-                                case 5:
-                                    AppBase.doramaReleasePage = 0;
-                                    break;
-                            }
-                            break;
+                            case CANCELLED:
+                                switch (type){
+                                    case 0:
+                                        AppBase.animeReleasePage--;
+                                        break;
+                                    case 1:
+                                        AppBase.OVAONASpecialReleasePage--;
+                                        break;
+                                    case 2:
+                                        AppBase.movieReleasePage--;
+                                        break;
+                                    case 3:
+                                        AppBase.polnyiMetrReleasePage = 0;
+                                        break;
+                                    case 4:
+                                        AppBase.documentaryReleasePage = 0;
+                                        break;
+                                    case 5:
+                                        AppBase.doramaReleasePage = 0;
+                                        break;
+                                }
+                                break;
 
-                        default:
-                            return;
-                    }
+                            default:
+                                return;
+                        }
 
-                    Log.wtf("Releases", "LoadOver " + workInfo.getState());
-                    fragment_ready = true;
-                    super.load_worker_id = null;
-                    super.refresh.setRefreshing(false);
+                        Log.wtf("Releases", "LoadOver " + workInfo.getState());
+                        fragment_ready = true;
+                        super.load_worker_id = null;
+                        super.refresh.setRefreshing(false);
+                    });
                 });
     }
 

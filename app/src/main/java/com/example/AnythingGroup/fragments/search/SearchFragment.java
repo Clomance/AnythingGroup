@@ -25,10 +25,10 @@ import androidx.work.WorkerParameters;
 import com.example.AnythingGroup.AppBase;
 import com.example.AnythingGroup.LoadWorker;
 import com.example.AnythingGroup.MainActivity;
+import com.example.AnythingGroup.Network;
 import com.example.AnythingGroup.R;
 import com.example.AnythingGroup.fragments.title.TitleMain;
 
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -46,7 +46,7 @@ public class SearchFragment extends Fragment {
 
     private TextView search_text;
 
-    private LinearLayout list;
+    private LinearLayout listView;
 
     private static final ArrayList<SearchReleaseItem> searchResultList =  new ArrayList<>();
 
@@ -73,7 +73,7 @@ public class SearchFragment extends Fragment {
             return handled;
         });
 
-        list = root.findViewById(R.id.search_fragment_list);
+        listView = root.findViewById(R.id.search_fragment_list);
 
         ImageView search_button = root.findViewById(R.id.search_fragment_button);
         search_button.setOnClickListener(this::searchButton);
@@ -91,7 +91,7 @@ public class SearchFragment extends Fragment {
     }
 
     public void updateList(){
-        list.removeAllViews();
+        listView.removeAllViews();
         for (SearchReleaseItem item: searchResultList) {
             Context context = this.getContext();
             if (context != null) {
@@ -123,7 +123,7 @@ public class SearchFragment extends Fragment {
                 };
                 view.setOnClickListener(onClickListener);
 
-                list.addView(view);
+                listView.addView(view);
             }
         }
     }
@@ -164,30 +164,34 @@ public class SearchFragment extends Fragment {
         load_worker_id = loadWorkRequest.getId();
 
         // Подключение функции для ожидания завершения загрузки
-        workManager.getWorkInfoByIdLiveData(load_worker_id)
-                .observe(getViewLifecycleOwner(), workInfo -> {
-                    switch (workInfo.getState()){
-                        case SUCCEEDED:
-                            updateList();
-                            break;
+        workManager.getWorkInfoByIdLiveData(load_worker_id).observe(
+                getViewLifecycleOwner(),
+                workInfo -> {
+                    if (listView == null) return;
+                    listView.post(() -> {
+                        switch (workInfo.getState()){
+                            case SUCCEEDED:
+                                updateList();
+                                break;
 
-                        case FAILED:
-                            searchResultList.clear();
-                            String error = workInfo.getOutputData().getString("error");
-                            errorView.setText(error);
-                            errorView.setVisibility(View.VISIBLE);
-                            updateList();
-                            break;
+                            case FAILED:
+                                searchResultList.clear();
+                                String error = workInfo.getOutputData().getString("error");
+                                errorView.setText(error);
+                                errorView.setVisibility(View.VISIBLE);
+                                updateList();
+                                break;
 
-                        case CANCELLED:
-                            break;
+                            case CANCELLED:
+                                break;
 
-                        default:
-                            return;
-                    }
+                            default:
+                                return;
+                        }
 
-                    progress.setVisibility(View.GONE);
-                    load_worker_id = null;
+                        progress.setVisibility(View.GONE);
+                        load_worker_id = null;
+                    });
                 });
     }
 
@@ -202,8 +206,7 @@ public class SearchFragment extends Fragment {
             Log.wtf("search_request", searchRequest);
 
             Data.Builder output = new Data.Builder();
-            assert searchRequest != null;
-            Document document = Jsoup.connect(searchRequest).get();
+            Document document = Network.get(searchRequest);
 
             Elements list_check = document.getElementsByClass("widget_content_list");
             if (list_check.size() == 0){

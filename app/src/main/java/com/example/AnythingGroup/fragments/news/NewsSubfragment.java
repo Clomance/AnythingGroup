@@ -19,10 +19,10 @@ import androidx.work.WorkerParameters;
 
 import com.example.AnythingGroup.AppBase;
 import com.example.AnythingGroup.LoadWorker;
+import com.example.AnythingGroup.Network;
 import com.example.AnythingGroup.R;
 import com.example.AnythingGroup.fragments.ContentListFragment;
 
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -36,7 +36,7 @@ public class NewsSubfragment extends ContentListFragment {
 
     private TextView errorView;
 
-    private LinearLayout list;
+    private LinearLayout listView;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -45,7 +45,7 @@ public class NewsSubfragment extends ContentListFragment {
         errorView = root.findViewById(R.id.error);
 
         // Сам список, который показывается на экране
-        list = root.findViewById(R.id.list);
+        listView = root.findViewById(R.id.list);
 
         super.refresh = root.findViewById(R.id.refresh);
 
@@ -101,7 +101,7 @@ public class NewsSubfragment extends ContentListFragment {
     }
 
     public void updateList(){
-        list.removeAllViews();
+        listView.removeAllViews();
         for (NewsListItem item: AppBase.commonNewsList) {
             Context context = this.getContext();
             if (context != null) {
@@ -125,7 +125,7 @@ public class NewsSubfragment extends ContentListFragment {
 
                 Log.wtf("News", "date " + item.datetime);
 
-                list.addView(view);
+                listView.addView(view);
             }
         }
     }
@@ -146,40 +146,45 @@ public class NewsSubfragment extends ContentListFragment {
         super.load_worker_id = loadWorkRequest.getId();
 
         // Подключение функции для ожидания завершения загрузки
-        super.workManager.getWorkInfoByIdLiveData(super.load_worker_id).observe(getViewLifecycleOwner(), workInfo -> {
-            switch (workInfo.getState()){
-                case SUCCEEDED:
-                    updateList();
-                    break;
+        super.workManager.getWorkInfoByIdLiveData(super.load_worker_id).observe(
+                getViewLifecycleOwner(),
+                workInfo -> {
+                    if (listView == null) return;
+                    listView.post(() -> {
+                        switch (workInfo.getState()){
+                            case SUCCEEDED:
+                                updateList();
+                                break;
 
-                case FAILED:
-                    AppBase.commonNewsPage--;
-                    // Код ошибки 404 - страница не найдена - обозначает конец списка релизов
-                    int error_code = workInfo.getOutputData().getInt("error_code", 0);
-                    if (error_code == 404){
-                        Log.wtf("Новости", "Конец списка");
-                        super.loaded_all = true;
-                    }
-                    else {
-                        String error = workInfo.getOutputData().getString("error");
-                        errorView.setText(error);
+                            case FAILED:
+                                AppBase.commonNewsPage--;
+                                // Код ошибки 404 - страница не найдена - обозначает конец списка релизов
+                                int error_code = workInfo.getOutputData().getInt("error_code", 0);
+                                if (error_code == 404){
+                                    Log.wtf("Новости", "Конец списка");
+                                    super.loaded_all = true;
+                                }
+                                else {
+                                    String error = workInfo.getOutputData().getString("error");
+                                    errorView.setText(error);
 
-                        errorView.setVisibility(View.VISIBLE);
-                    }
-                    break;
+                                    errorView.setVisibility(View.VISIBLE);
+                                }
+                                break;
 
-                case CANCELLED:
-                    AppBase.commonNewsPage--;
-                    break;
+                            case CANCELLED:
+                                AppBase.commonNewsPage--;
+                                break;
 
-                default:
-                    return;
-            }
+                            default:
+                                return;
+                        }
 
-            fragment_ready = true;
-            super.load_worker_id = null;
-            super.refresh.setRefreshing(false);
-        });
+                        fragment_ready = true;
+                        super.load_worker_id = null;
+                        super.refresh.setRefreshing(false);
+                    });
+                });
     }
 
     public static class NewsLoadWorker extends LoadWorker {
@@ -188,9 +193,7 @@ public class NewsSubfragment extends ContentListFragment {
         }
 
         public Result Work(Data input) throws IOException {
-            String url = "https://a-g.site/news?page=" + AppBase.commonNewsPage;
-
-            Document document = Jsoup.connect(url).get();
+            Document document = Network.get("https://a-g.site/news?page=" + AppBase.commonNewsPage);
 
             Element list = document.getElementsByClass("default_list_one").get(0);
             Elements items = list.getElementsByClass("dlo_item_row");
