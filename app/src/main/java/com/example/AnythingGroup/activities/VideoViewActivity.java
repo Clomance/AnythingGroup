@@ -1,4 +1,4 @@
-package com.example.AnythingGroup;
+package com.example.AnythingGroup.activities;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -33,6 +33,10 @@ import androidx.work.WorkManager;
 import androidx.work.WorkRequest;
 import androidx.work.WorkerParameters;
 
+import com.example.AnythingGroup.AppBase;
+import com.example.AnythingGroup.LoadWorker;
+import com.example.AnythingGroup.Network;
+import com.example.AnythingGroup.R;
 import com.example.AnythingGroup.fragments.video.VideoMediaController;
 import com.example.AnythingGroup.fragments.video.WebClient;
 

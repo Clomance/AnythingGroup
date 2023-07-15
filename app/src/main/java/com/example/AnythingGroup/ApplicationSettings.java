@@ -7,7 +7,7 @@ import androidx.work.Configuration;
 
 import java.util.concurrent.Executors;
 
-public class ExtendedApplication extends Application implements Configuration.Provider {
+public class ApplicationSettings extends Application implements Configuration.Provider {
     @NonNull
     @Override
     public Configuration getWorkManagerConfiguration() {

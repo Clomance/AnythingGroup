@@ -13,6 +13,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.work.Data;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkRequest;
@@ -20,35 +21,35 @@ import androidx.work.WorkerParameters;
 
 import com.example.AnythingGroup.AppBase;
 import com.example.AnythingGroup.extendedUI.ExtendedScrollView;
-import com.example.AnythingGroup.ReleaseContentListParser;
-import com.example.AnythingGroup.LoadWorker;
-import com.example.AnythingGroup.MainActivity;
+import com.example.AnythingGroup.fragments.releases.ReleaseContentListParser;
+import com.example.AnythingGroup.activities.MainActivity;
 import com.example.AnythingGroup.R;
 import com.example.AnythingGroup.fragments.ContentListFragment;
+import com.example.AnythingGroup.fragments.releases.ReleaseLoadWorker;
 import com.example.AnythingGroup.fragments.title.TitleMain;
 
 import java.io.IOException;
 
 public class NewsReleasesSubfragment extends ContentListFragment {
-    // Указывает на готовность фрагмента - окончание загрузки данных
-    private boolean fragment_ready = false;
-
-    private TextView errorView;
-
     // Список релизов
     private GridLayout listView;
-    // Количество колонок
+    // Количество столбцов
     private int columnCount = 1;
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        super.contentListState = AppBase.news.releaseNewsList.state;
+    }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.release_subfragment, container, false);
 
-        errorView = root.findViewById(R.id.error);
-
-        super.refresh = root.findViewById(R.id.refresh);
-
-        ExtendedScrollView scrollView = root.findViewById(R.id.scrollView);
+        super.errorView = root.findViewById(R.id.error);
+        super.refreshLayout = root.findViewById(R.id.refresh);
+        super.scrollView = root.findViewById(R.id.scrollView);
 
         // Список, который показывается на экране
         listView = root.findViewById(R.id.list);
@@ -65,48 +66,51 @@ public class NewsReleasesSubfragment extends ContentListFragment {
 
         listView.setColumnCount(columnCount);
 
-        // Загрузка более ранних новостей при достижении конца списка
-        scrollView.setOnScrollListener(scrollView1 -> {
-            Log.wtf("NewsReleases", "LoadMore");
-
-            if (super.load_worker_id == null && !loaded_all && fragment_ready) {
-                Log.wtf("NewsReleases", "LoadMore");
-                fragment_ready = false;
-                super.refresh.setRefreshing(true);
-                loadReleases();
-            }
-        });
-
-        // Обновление новостей при свайпе вниз
-        super.refresh.setOnRefreshListener(this);
-
         return root;
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        if (AppBase.releaseNewsList.isEmpty()) {
-            fragment_ready = false;
+
+        if (super.contentListState.state == ReleaseContentListParser.ContentState.None) {
             loadReleases();
             Log.wtf("NewsReleases", "onResumeLoad");
         }
         else {
             updateList(-1);
-            fragment_ready = true;
             Log.wtf("NewsReleases", "onResumeShow");
+        }
+    }
+
+    /// Перезагружает всю ленту новостей релизов.
+    @Override
+    public void onRefresh() {
+        if (super.contentListState.state != ReleaseContentListParser.ContentState.Loading) {
+            AppBase.news.releaseNewsList.state.pagesLoaded = 0;
+            AppBase.news.releaseNewsList.clear();
+            listView.removeAllViews();
+            loadReleases();
+        }
+    }
+
+    @Override
+    public void onEndReached(ExtendedScrollView scrollView) {
+        if (super.contentListState.state == ReleaseContentListParser.ContentState.Loaded) {
+            super.refreshLayout.setRefreshing(true);
+            loadReleases();
         }
     }
 
     public void updateList(int items) {
         if (items == -1) {
             listView.removeAllViews();
-            items = AppBase.releaseNewsList.size();
+            items = AppBase.news.releaseNewsList.size();
         }
 
         Log.wtf("ListView", "Add " + items);
 
-        int rows = AppBase.releaseNewsList.size() / columnCount;
+        int rows = AppBase.news.releaseNewsList.size() / columnCount;
 
         listView.setRowCount(rows + 1);
 
@@ -116,7 +120,7 @@ public class NewsReleasesSubfragment extends ContentListFragment {
 
         int itemWidth = screenWidth / columnCount;
 
-        int start = AppBase.releaseNewsList.size() - items;
+        int start = AppBase.news.releaseNewsList.size() - items;
         for (int i = start; i < items; i++) {
             Log.wtf("ListView", "Add View");
 
@@ -126,7 +130,7 @@ public class NewsReleasesSubfragment extends ContentListFragment {
             Context context = getContext();
 
             if (context != null) {
-                ReleaseContentListParser.ContentListItem item = AppBase.releaseNewsList.get(i);
+                ReleaseContentListParser.ContentListItem item = AppBase.news.releaseNewsList.get(i);
 
                 View itemView = View.inflate(context, R.layout.release_list_item, null);
 
@@ -189,82 +193,67 @@ public class NewsReleasesSubfragment extends ContentListFragment {
 
     /// Загружает новости и добавляет их в конец.
     public void loadReleases() {
-        errorView.setVisibility(View.GONE);
+        super.errorView.setVisibility(View.GONE);
 
-        AppBase.releaseNewsPage++;
+        super.contentListState.state = ReleaseContentListParser.ContentState.Loading;
+
+        super.contentListState.pagesLoaded++;
 
         // Создание процедуры для загрузки релизов
         WorkRequest loadWorkRequest = new OneTimeWorkRequest
-                .Builder(NewsReleasesLoadWorker.class)
+                .Builder(NewsReleasesLoader.class)
                 .build();
 
         // Добавление процедуры в очередь выполнения
         super.workManager.enqueue(loadWorkRequest);
 
-        super.load_worker_id = loadWorkRequest.getId();
+        super.contentListState.workerId = loadWorkRequest.getId();
 
         // Подключение функции для ожидания завершения загрузки
-        super.workManager.getWorkInfoByIdLiveData(super.load_worker_id).observe(
+        super.workManager.getWorkInfoByIdLiveData(super.contentListState.workerId).observe(
                 getViewLifecycleOwner(),
                 workInfo -> {
-                    if (listView == null) return;
-                    listView.post(() -> {
-                        switch (workInfo.getState()) {
-                            case SUCCEEDED:
+                    switch (workInfo.getState()) {
+                        case SUCCEEDED:
+                            if (listView == null) return;
+                            listView.post(() -> {
                                 updateList(-1);
-                                break;
+                                super.refreshLayout.setRefreshing(false);
+                            });
+                            break;
 
-                            case FAILED:
-                                AppBase.releaseNewsPage--;
-
-                                String error = workInfo.getOutputData().getString("error");
-                                errorView.setText(error);
-                                errorView.setVisibility(View.VISIBLE);
-
+                        case FAILED:
+                            if (listView == null) return;
+                            listView.post(() -> {
                                 // Код ошибки 404 - страница не найдена - обозначает конец списка релизов
                                 int error_code = workInfo.getOutputData().getInt("error_code", 0);
-                                if (error_code == 404) {
-                                    Log.wtf("Релизы", "Конец списка");
-                                    loaded_all = true;
+                                if (error_code != 404) {
+                                    String error = workInfo.getOutputData().getString("error");
+                                    super.errorView.setText(error);
+                                    super.errorView.setVisibility(View.VISIBLE);
                                 }
-                                break;
 
-                            case CANCELLED:
-                                AppBase.releaseNewsPage--;
-                                break;
+                                super.refreshLayout.setRefreshing(false);
+                            });
+                            break;
 
-                            default:
-                                return;
-                        }
-
-                        fragment_ready = true;
-                        super.refresh.setRefreshing(false);
-                        super.load_worker_id = null;
-                    });
-                });
+                        default: break;
+                    }
+                }
+        );
     }
 
-    /// Перезагружает всю ленту новостей релизов.
-    @Override
-    public void onRefresh() {
-        if (super.load_worker_id == null) {
-            AppBase.releaseNewsPage = 0;
-            super.loaded_all = false;
-            AppBase.releaseNewsList.clear();
-            listView.removeAllViews();
-            loadReleases();
-        }
-    }
-
-    public static class NewsReleasesLoadWorker extends LoadWorker {
-        public NewsReleasesLoadWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
+    public static class NewsReleasesLoader extends ReleaseLoadWorker {
+        public NewsReleasesLoader(@NonNull Context context, @NonNull WorkerParameters workerParams) {
             super(context, workerParams);
         }
 
         public Result Work(Data input) throws IOException {
-            String page_url = "https://a-g.site/relise?page=" + AppBase.releaseNewsPage;
+            super.contentListState = AppBase.news.releaseNewsList.state;
 
-            AppBase.releaseNewsList.addAll(ReleaseContentListParser.parse(page_url));
+            String page_url = "https://a-g.site/relise?page=" + AppBase.news.releaseNewsList.state.pagesLoaded;
+
+            AppBase.news.releaseNewsList.addAll(ReleaseContentListParser.parse(page_url));
 
             return null;
         }

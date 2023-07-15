@@ -1,9 +1,10 @@
 package com.example.AnythingGroup.fragments.search;
 
 import android.graphics.Bitmap;
+import android.text.SpannableStringBuilder;
 
-public class SearchReleaseItem {
-    public String title;
+public class ReleaseSearchItem {
+    public SpannableStringBuilder title;
     public Bitmap image;
     public String reference;
     public String description;

@@ -1,4 +1,4 @@
-package com.example.AnythingGroup;
+package com.example.AnythingGroup.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -15,6 +15,8 @@ import androidx.work.WorkRequest;
 
 import java.util.Calendar;
 
+import com.example.AnythingGroup.AppBase;
+import com.example.AnythingGroup.R;
 import com.example.AnythingGroup.fragments.authorization.SignInSubfragment;
 
 /// Стартовая активность.
@@ -99,12 +101,12 @@ public class StartActivity extends AppCompatActivity {
         super.onStart();
 
         // Добавление ссылок в матрицу релизов
-        AppBase.releaseMatrix.add(AppBase.animeReleaseList);
-        AppBase.releaseMatrix.add(AppBase.OVAONASpecialReleaseList);
-        AppBase.releaseMatrix.add(AppBase.movieReleaseList);
-        AppBase.releaseMatrix.add(AppBase.polnyiMetrReleaseList);
-        AppBase.releaseMatrix.add(AppBase.documentaryReleaseList);
-        AppBase.releaseMatrix.add(AppBase.doramaReleaseList);
+        AppBase.releases.releaseMatrix.add(AppBase.releases.animeReleaseList);
+        AppBase.releases.releaseMatrix.add(AppBase.releases.OVAONASpecialReleaseList);
+        AppBase.releases.releaseMatrix.add(AppBase.releases.movieReleaseList);
+        AppBase.releases.releaseMatrix.add(AppBase.releases.polnyiMetrReleaseList);
+        AppBase.releases.releaseMatrix.add(AppBase.releases.documentaryReleaseList);
+        AppBase.releases.releaseMatrix.add(AppBase.releases.doramaReleaseList);
 
         // Получение ссылки на локальный файл настроек
         AppBase.getSharedPreferences(this);
@@ -120,8 +122,8 @@ public class StartActivity extends AppCompatActivity {
         Log.wtf("Start", "Auto sign in");
 
         Data.Builder args = new Data.Builder();
-        args.putString("email", AppBase.ProfileEmail);
-        args.putString("password", AppBase.ProfilePassword);
+        args.putString("email", AppBase.user.email);
+        args.putString("password", AppBase.user.password);
 
         // Создание процедуры для авторизации
         WorkRequest startWorkRequest = new OneTimeWorkRequest

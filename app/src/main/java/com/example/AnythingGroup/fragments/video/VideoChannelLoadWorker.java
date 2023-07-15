@@ -47,7 +47,7 @@ public class VideoChannelLoadWorker extends LoadWorker {
             Elements image_check = image_container.getElementsByTag("img");
             if (image_check.size() != 0) {
                 Element image = image_check.get(0);
-                video.image = AppBase.loadImageFromURL(image.attributes().get("src"));
+                video.image = Network.getImageFromURL(image.attributes().get("src"));
             }
 
             // Ссылка на страницу с видео

@@ -9,7 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.viewpager2.widget.ViewPager2;
 
-import com.example.AnythingGroup.MainActivity;
+import com.example.AnythingGroup.activities.MainActivity;
 import com.example.AnythingGroup.fragments.TabPagesBuilder;
 import com.example.AnythingGroup.R;
 import com.google.android.material.tabs.TabLayout;

@@ -3,10 +3,6 @@ package com.example.AnythingGroup.fragments.title;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.text.Spannable;
-import android.text.SpannableString;
-import android.text.SpannableStringBuilder;
-import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -26,10 +22,9 @@ import androidx.work.WorkManager;
 import androidx.work.WorkRequest;
 
 import com.example.AnythingGroup.AppBase;
-import com.example.AnythingGroup.CommentData;
-import com.example.AnythingGroup.MainActivity;
+import com.example.AnythingGroup.activities.MainActivity;
 import com.example.AnythingGroup.R;
-import com.example.AnythingGroup.VideoViewActivity;
+import com.example.AnythingGroup.activities.VideoViewActivity;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -171,9 +166,7 @@ public class TitleFragment extends Fragment implements SwipeRefreshLayout.OnRefr
 
     public void setText(TextView view, String field, String text){
         view.setText(field);
-        Spannable styled_text = new SpannableString(text);
-        styled_text.setSpan(new ForegroundColorSpan(getResources().getColor(R.color.title_fragment_text)), 0, text.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        view.append(styled_text);
+        view.append(AppBase.colorText(text, getResources().getColor(R.color.title_fragment_text)));
     }
 
     private void setTitleInfo(){
@@ -360,7 +353,7 @@ public class TitleFragment extends Fragment implements SwipeRefreshLayout.OnRefr
         else{
             String header = getResources().getString(R.string.title_field_description) + "\n";
             description.setText(header);
-            description.append(AppBase.textFormatter(getContext(), AppBase.title.description, new ForegroundColorSpan(getResources().getColor(R.color.title_fragment_text))));
+            description.append(AppBase.title.description);
             description.setVisibility(View.VISIBLE);
         }
 
@@ -373,24 +366,13 @@ public class TitleFragment extends Fragment implements SwipeRefreshLayout.OnRefr
         }
 
         // Список эпизодов
-        if (AppBase.title.episode_list.size() == 0){
+        if (AppBase.title.episode_list == null || AppBase.title.episode_list.length() == 0){
             episode_list.setVisibility(View.GONE);
         }
         else {
-            StringBuilder text = new StringBuilder();
-            for (int i = 0; i < AppBase.title.episode_list.size(); i++) {
-                text.append("\n").append(AppBase.title.episode_list.get(i));
-            }
-
             String header = getResources().getString(R.string.title_field_episode_list) + "\n";
             episode_list.setText(header);
-            episode_list.append(
-                    AppBase.textFormatter(
-                            getContext(),
-                            text.toString(),
-                            new ForegroundColorSpan(getResources().getColor(R.color.title_fragment_text))
-                    )
-            );
+            episode_list.append(AppBase.title.episode_list);
 
             episode_list.setVisibility(View.VISIBLE);
         }
@@ -433,9 +415,7 @@ public class TitleFragment extends Fragment implements SwipeRefreshLayout.OnRefr
 
                     TextView text_view = comment_view.findViewById(R.id.comment_text);
 
-                    SpannableStringBuilder comment_text = AppBase.textFormatter(context, comment.text, null);
-
-                    text_view.setText(comment_text);
+                    text_view.setText(comment.text);
 
                     LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
                             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);

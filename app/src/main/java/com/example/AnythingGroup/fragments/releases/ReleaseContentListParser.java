@@ -1,6 +1,8 @@
-package com.example.AnythingGroup;
+package com.example.AnythingGroup.fragments.releases;
 
 import android.graphics.Bitmap;
+
+import com.example.AnythingGroup.Network;
 
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -8,6 +10,7 @@ import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.UUID;
 
 public class ReleaseContentListParser {
     public static ArrayList<ContentListItem> parse(String url) throws IOException {
@@ -30,7 +33,7 @@ public class ReleaseContentListParser {
             Element image_container = photo.getElementsByTag("a").get(1);
             Element image = image_container.getElementsByTag("img").get(0);
             String image_reference = image.attributes().get("src");
-            item.image = AppBase.loadImageFromURL(image_reference);
+            item.image = Network.getImageFromURL(image_reference);
 
             Element state = photo.getElementsByClass("ngr_photo_footer").get(0);
             Element state_inner = state.getElementsByTag("img").get(0);
@@ -73,5 +76,24 @@ public class ReleaseContentListParser {
             Complete,
             Stopped,
         }
+    }
+
+    public static class ContentListState {
+        public UUID workerId = null;
+
+        public ContentState state = ContentState.None;
+
+        public int pagesLoaded = 0;
+    }
+
+    public static class ContentList<T> extends ArrayList<T>{
+        public ContentListState state = new ContentListState();
+    }
+
+    public enum ContentState{
+        None,
+        Loading,
+        Loaded,
+        AllLoaded
     }
 }

@@ -4,10 +4,10 @@
     tools:showIn="navigation_view">
 
     <group android:checkableBehavior="single">
-<!--        <item-->
-<!--            android:id="@+id/fragment_my_profile"-->
-<!--            android:icon="@drawable/home_icon"-->
-<!--            android:title="Мой профиль" />-->
+        <item
+            android:id="@+id/fragment_my_profile"
+            android:icon="@drawable/home_icon"
+            android:title="Мой профиль" />
         <item
             android:id="@+id/fragment_news"
             android:icon="@android:drawable/ic_dialog_dialer"

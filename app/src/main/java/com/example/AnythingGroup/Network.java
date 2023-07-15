@@ -1,5 +1,7 @@
 package com.example.AnythingGroup;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.util.Log;
 
 import com.example.AnythingGroup.fragments.video.VideoSource;
@@ -8,13 +10,34 @@ import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
 public class Network {
     public static String token;
     public static Map<String, String> cookies = new HashMap<>();
+
+    // Загружает изображения.
+    // Если указана лишь часть пути, то самостоятельно дополняет его.
+    // Если такого файла нет, то возвращает null.
+    public static Bitmap getImageFromURL(String url) throws IOException{
+        try {
+            if (!url.contains("https")) {
+                url = AppBase.A_G_SITE + url;
+            }
+
+            InputStream in = new URL(url).openStream();
+
+            return BitmapFactory.decodeStream(in);
+        }
+        catch (FileNotFoundException e){
+            return null;
+        }
+    }
 
     public static Document get(String url) throws IOException {
         Log.wtf("Cookies", cookies.toString());

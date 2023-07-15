@@ -20,9 +20,9 @@ import androidx.work.WorkManager;
 import androidx.work.WorkRequest;
 
 import com.example.AnythingGroup.AppBase;
-import com.example.AnythingGroup.MainActivity;
+import com.example.AnythingGroup.activities.MainActivity;
 import com.example.AnythingGroup.R;
-import com.example.AnythingGroup.VideoViewActivity;
+import com.example.AnythingGroup.activities.VideoViewActivity;
 
 import java.util.UUID;
 

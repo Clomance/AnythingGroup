@@ -1,24 +1,25 @@
 package com.example.AnythingGroup.fragments;
 
 import android.content.Context;
-import android.util.Log;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.work.WorkManager;
 
-import java.util.UUID;
+import com.example.AnythingGroup.extendedUI.ExtendedScrollView;
+import com.example.AnythingGroup.fragments.releases.ReleaseContentListParser;
 
-public abstract class ContentListFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener {
+
+public abstract class ContentListFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener, ExtendedScrollView.OnScrollListener {
     protected WorkManager workManager;
 
-    protected UUID load_worker_id = null;
+    protected TextView errorView;
+    protected SwipeRefreshLayout refreshLayout;
+    protected ExtendedScrollView scrollView;
 
-    // Флаг, показывающий, что все новости загружены
-    protected boolean loaded_all = false;
-
-    protected SwipeRefreshLayout refresh;
+    protected ReleaseContentListParser.ContentListState contentListState;
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -28,28 +29,36 @@ public abstract class ContentListFragment extends Fragment implements SwipeRefre
     }
 
     @Override
+    public void onStart() {
+        super.onStart();
+
+        // Пролистывание новостей
+        scrollView.setOnScrollListener(this);
+
+        // Обновление новостей при свайпе
+        refreshLayout.setOnRefreshListener(this);
+    }
+
+    @Override
     public void onResume() {
         super.onResume();
         // При возобновлении работы (при переходе или после сворачивания) страницы проверяется, идёт ли загрузка записей (постов)
         // Если нет, то проверяется, пуст ли список записей
-        if (load_worker_id != null) {
+        if (contentListState.state == ReleaseContentListParser.ContentState.Loading) {
             // Баг со съезжанием иконки загрузки; решение взято отсюда -
             // https://stackoverflow.com/questions/41854351/visual-bug-when-using-swipe-refresh-layout
-            refresh.setProgressViewOffset(false, 0, 50);
-            refresh.setRefreshing(true);
+            refreshLayout.setProgressViewOffset(false, 0, 50);
+            refreshLayout.setRefreshing(true);
         }
         else {
-            refresh.setRefreshing(false);
+            refreshLayout.setRefreshing(false);
         }
     }
 
     @Override
     public void onDestroy() {
-        Log.i("ContentListFragment", "onDestroy");
-
-        if (this.load_worker_id != null) {
-            workManager.cancelWorkById(this.load_worker_id);
-            this.load_worker_id = null;
+        if (contentListState.state == ReleaseContentListParser.ContentState.Loading) {
+            workManager.cancelWorkById(contentListState.workerId);
         }
         super.onDestroy();
     }

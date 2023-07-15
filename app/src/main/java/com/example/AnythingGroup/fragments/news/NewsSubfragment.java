@@ -8,10 +8,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.work.Data;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkRequest;
@@ -21,7 +21,10 @@ import com.example.AnythingGroup.AppBase;
 import com.example.AnythingGroup.LoadWorker;
 import com.example.AnythingGroup.Network;
 import com.example.AnythingGroup.R;
+import com.example.AnythingGroup.extendedUI.ExtendedScrollView;
 import com.example.AnythingGroup.fragments.ContentListFragment;
+import com.example.AnythingGroup.fragments.releases.ReleaseContentListParser;
+import com.example.AnythingGroup.fragments.releases.ReleaseLoadWorker;
 
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -31,44 +34,25 @@ import java.io.IOException;
 
 
 public class NewsSubfragment extends ContentListFragment {
-    // Указывает на готовность фрагмента - окончание загрузки данных
-    private boolean fragment_ready = false;
-
-    private TextView errorView;
-
     private LinearLayout listView;
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        super.contentListState = AppBase.news.commonNewsList.state;
+    }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.news_subfragment, container, false);
 
-        errorView = root.findViewById(R.id.error);
+        super.errorView = root.findViewById(R.id.error);
+        super.refreshLayout = root.findViewById(R.id.refresh);
+        super.scrollView = root.findViewById(R.id.scrollView);
 
         // Сам список, который показывается на экране
         listView = root.findViewById(R.id.list);
-
-        super.refresh = root.findViewById(R.id.refresh);
-
-        ScrollView scrollView = root.findViewById(R.id.scrollView);
-
-        Log.wtf("News", "Create");
-
-        // Загрузка более ранних новостей при достижении конца списка
-        scrollView.getViewTreeObserver().addOnScrollChangedListener(() -> {
-            if (!scrollView.canScrollVertically(1) && fragment_ready) {
-                // Если ничего не загружается и не загружены все новости, то догрузить ещё
-                if (super.load_worker_id == null && !super.loaded_all) {
-                    Log.wtf("News", "Load");
-                    fragment_ready = false;
-                    super.refresh.setRefreshing(true);
-                    loadNews();
-
-                }
-            }
-        });
-
-        // Обновление новостей при свайпе
-        super.refresh.setOnRefreshListener(this);
 
         return root;
     }
@@ -76,33 +60,40 @@ public class NewsSubfragment extends ContentListFragment {
     @Override
     public void onStart() {
         super.onStart();
-        if (AppBase.commonNewsList.isEmpty()){
-            fragment_ready = false;
+
+        if (super.contentListState.state == ReleaseContentListParser.ContentState.None){
             loadNews();
-            Log.wtf("News", "onResumeLoad");
+            Log.wtf("News", "onStartLoad");
         }
         else{
             updateList();
-            fragment_ready = true;
-            Log.wtf("News", "onResumeShow");
+            Log.wtf("News", "onStartShow");
         }
     }
 
     @Override
     public void onRefresh() {
         Log.wtf("Reload", "News");
-        if (super.load_worker_id == null) {
-            fragment_ready = false;
-            AppBase.commonNewsPage = 0;
-            super.loaded_all = false;
-            AppBase.commonNewsList.clear();
+        if (super.contentListState.state != ReleaseContentListParser.ContentState.Loading) {
+            AppBase.news.commonNewsList.state.pagesLoaded = 0;
+            AppBase.news.commonNewsList.clear();
+            loadNews();
+        }
+    }
+
+
+    @Override
+    public void onEndReached(ExtendedScrollView scrollView) {
+        // Если ничего не загружается и не загружены все новости, то догрузить ещё
+        if (super.contentListState.state == ReleaseContentListParser.ContentState.Loaded) {
+            super.refreshLayout.setRefreshing(true);
             loadNews();
         }
     }
 
     public void updateList(){
         listView.removeAllViews();
-        for (NewsListItem item: AppBase.commonNewsList) {
+        for (NewsListItem item: AppBase.news.commonNewsList) {
             Context context = this.getContext();
             if (context != null) {
                 View view = View.inflate(context, R.layout.news_list_item, null);
@@ -132,68 +123,65 @@ public class NewsSubfragment extends ContentListFragment {
 
     /// Загружает новости и добавляет их в конец.
     public void loadNews(){
-        Log.wtf("News", "Load");
-        AppBase.commonNewsPage++;
+        super.errorView.setVisibility(View.GONE);
+
+        super.contentListState.state = ReleaseContentListParser.ContentState.Loading;
+
+        super.contentListState.pagesLoaded++;
 
         // Создание процедуры для авторизации
         WorkRequest loadWorkRequest = new OneTimeWorkRequest
-                .Builder(NewsSubfragment.NewsLoadWorker.class)
+                .Builder(NewsSubfragment.NewsLoader.class)
                 .build();
 
         // Добавление процедуры в очередь выполнения
         super.workManager.enqueue(loadWorkRequest);
 
-        super.load_worker_id = loadWorkRequest.getId();
+        super.contentListState.workerId = loadWorkRequest.getId();
 
         // Подключение функции для ожидания завершения загрузки
-        super.workManager.getWorkInfoByIdLiveData(super.load_worker_id).observe(
+        super.workManager.getWorkInfoByIdLiveData(super.contentListState.workerId).observe(
                 getViewLifecycleOwner(),
                 workInfo -> {
-                    if (listView == null) return;
-                    listView.post(() -> {
-                        switch (workInfo.getState()){
-                            case SUCCEEDED:
+                    switch (workInfo.getState()){
+                        case SUCCEEDED:
+                            if (listView == null) return;
+                            listView.post(() -> {
                                 updateList();
-                                break;
+                                super.refreshLayout.setRefreshing(false);
+                            });
+                            break;
 
-                            case FAILED:
-                                AppBase.commonNewsPage--;
+                        case FAILED:
+                            if (listView == null) return;
+                            listView.post(() -> {
                                 // Код ошибки 404 - страница не найдена - обозначает конец списка релизов
                                 int error_code = workInfo.getOutputData().getInt("error_code", 0);
-                                if (error_code == 404){
-                                    Log.wtf("Новости", "Конец списка");
-                                    super.loaded_all = true;
-                                }
-                                else {
+                                if (error_code != 404) {
                                     String error = workInfo.getOutputData().getString("error");
-                                    errorView.setText(error);
-
-                                    errorView.setVisibility(View.VISIBLE);
+                                    super.errorView.setText(error);
+                                    super.errorView.setVisibility(View.VISIBLE);
                                 }
-                                break;
 
-                            case CANCELLED:
-                                AppBase.commonNewsPage--;
-                                break;
+                                super.refreshLayout.setRefreshing(false);
+                            });
+                            break;
 
-                            default:
-                                return;
-                        }
-
-                        fragment_ready = true;
-                        super.load_worker_id = null;
-                        super.refresh.setRefreshing(false);
-                    });
-                });
+                        default: break;
+                    }
+                }
+        );
     }
 
-    public static class NewsLoadWorker extends LoadWorker {
-        public NewsLoadWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
+    public static class NewsLoader extends ReleaseLoadWorker {
+        public NewsLoader(@NonNull Context context, @NonNull WorkerParameters workerParams) {
             super(context, workerParams);
         }
 
         public Result Work(Data input) throws IOException {
-            Document document = Network.get("https://a-g.site/news?page=" + AppBase.commonNewsPage);
+            super.contentListState = AppBase.news.commonNewsList.state;
+
+            Document document = Network.get("https://a-g.site/news?page=" + AppBase.news.commonNewsList.state.pagesLoaded);
 
             Element list = document.getElementsByClass("default_list_one").get(0);
             Elements items = list.getElementsByClass("dlo_item_row");
@@ -208,7 +196,7 @@ public class NewsSubfragment extends ContentListFragment {
                 newsItem.reference = reference_container.attributes().get("href");
 
                 Element image = reference_container.getElementsByTag("img").get(0);
-                newsItem.image = AppBase.loadImageFromURL(image.attributes().get("src"));
+                newsItem.image = Network.getImageFromURL(image.attributes().get("src"));
 
                 Element info_container = item.getElementsByClass("dlo_fields").get(0);
 
@@ -223,7 +211,7 @@ public class NewsSubfragment extends ContentListFragment {
                     newsItem.description = description_check.get(0).html();
                 }
 
-                AppBase.commonNewsList.add(newsItem);
+                AppBase.news.commonNewsList.add(newsItem);
             }
 
             return null;

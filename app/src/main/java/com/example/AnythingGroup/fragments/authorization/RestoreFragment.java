@@ -8,7 +8,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
-import com.example.AnythingGroup.MainActivity;
+import com.example.AnythingGroup.activities.MainActivity;
 import com.example.AnythingGroup.R;
 
 import java.util.Objects;

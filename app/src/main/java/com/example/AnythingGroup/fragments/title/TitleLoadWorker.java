@@ -7,9 +7,9 @@ import androidx.work.Data;
 import androidx.work.WorkerParameters;
 
 import com.example.AnythingGroup.AppBase;
-import com.example.AnythingGroup.CommentData;
 import com.example.AnythingGroup.LoadWorker;
 import com.example.AnythingGroup.Network;
+import com.example.AnythingGroup.R;
 
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -39,7 +39,7 @@ public class TitleLoadWorker extends LoadWorker {
             Element image_element = document.getElementsByClass("f_photo").get(0);
             Element image_container = image_element.getElementsByTag("div").get(1);
             Element image = image_container.getElementsByTag("img").get(0);
-            AppBase.title.image = AppBase.loadImageFromURL(image.attributes().get("src"));
+            AppBase.title.image = Network.getImageFromURL(image.attributes().get("src"));
         }
 
         // Русское название
@@ -199,7 +199,11 @@ public class TitleLoadWorker extends LoadWorker {
         // Описание
         Element description_element = document.getElementsByClass("f_content").get(0);
         Element description = description_element.getElementsByTag("div").get(2);
-        AppBase.title.description = description.html();
+        AppBase.title.description = AppBase.htmlToText(
+                description,
+                getApplicationContext(),
+                AppBase.TextSettings.foreground(getApplicationContext().getResources().getColor(R.color.title_fragment_text))
+        );
 
         /// Онлайн просмотр
         Elements video_reference_element_check = document.getElementsByClass("f_onlinevideo");
@@ -222,18 +226,12 @@ public class TitleLoadWorker extends LoadWorker {
         if (episode_list_element_check.size() != 0) {
             Element episode_list_element = episode_list_element_check.get(0);
             Element episode_list_container = episode_list_element.getElementsByTag("div").get(2);
-            Elements episode_list = episode_list_container.getElementsByTag("div");
-            AppBase.title.episode_list.clear();
-            if (episode_list.size() == 1) {
-                AppBase.title.episode_list.add(episode_list.get(0).html());
-            }
-            else {
-                episode_list.remove(0);
 
-                for (Element episode : episode_list) {
-                    AppBase.title.episode_list.add(episode.html());
-                }
-            }
+            AppBase.title.episode_list = AppBase.htmlToText(
+                    episode_list_container,
+                    getApplicationContext(),
+                    AppBase.TextSettings.foreground(getApplicationContext().getResources().getColor(R.color.title_fragment_text))
+            );
         }
 
         // Спасибо
@@ -253,8 +251,7 @@ public class TitleLoadWorker extends LoadWorker {
 
         // Комментарии
         Element comment_list_container = document.getElementById("comments_list");
-        Elements comment_list = Objects.requireNonNull(comment_list_container)
-                .getElementsByClass("comment");
+        Elements comment_list = Objects.requireNonNull(comment_list_container).getElementsByClass("comment");
         AppBase.title.comments.clear();
         for (Element comment: comment_list){
             CommentData comment_data = new CommentData();
@@ -283,11 +280,12 @@ public class TitleLoadWorker extends LoadWorker {
             Element image_element = comment.getElementsByClass("avatar").get(0);
             Element image_container = image_element.getElementsByTag("a").get(0);
             Element image = image_container.getElementsByTag("img").get(0);
-            comment_data.image = AppBase.loadImageFromURL(image.attributes().get("src"));
+            comment_data.image = Network.getImageFromURL(image.attributes().get("src"));
 
             // Текст
             Element text = comment.getElementsByClass("text").get(0);
-            comment_data.text = text.html();
+
+            comment_data.text = AppBase.htmlToText(text, this.getApplicationContext());
 
             AppBase.title.comments.add(comment_data);
         }

@@ -1,8 +1,7 @@
 package com.example.AnythingGroup.fragments.title;
 
 import android.graphics.Bitmap;
-
-import com.example.AnythingGroup.CommentData;
+import android.text.SpannableStringBuilder;
 
 import java.util.ArrayList;
 
@@ -48,13 +47,13 @@ public class Title {
     // Работа со звуком
     public String sound;
     // Описание
-    public String description;
+    public SpannableStringBuilder description;
     // Ссылка на видео канал
     public String video_channel_reference;
     // false указывает на то, что это ссылка на канал, а не само видео
     public boolean video_reference = false;
     // Список эпизодов
-    public ArrayList<String> episode_list = new ArrayList<>();
+    public SpannableStringBuilder episode_list;
     // Спасибо
     public ArrayList<String> thanks = new ArrayList<>();
     // Комментарии

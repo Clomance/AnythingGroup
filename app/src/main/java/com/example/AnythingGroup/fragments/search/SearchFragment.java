@@ -24,7 +24,7 @@ import androidx.work.WorkerParameters;
 
 import com.example.AnythingGroup.AppBase;
 import com.example.AnythingGroup.LoadWorker;
-import com.example.AnythingGroup.MainActivity;
+import com.example.AnythingGroup.activities.MainActivity;
 import com.example.AnythingGroup.Network;
 import com.example.AnythingGroup.R;
 import com.example.AnythingGroup.fragments.title.TitleMain;
@@ -48,7 +48,7 @@ public class SearchFragment extends Fragment {
 
     private LinearLayout listView;
 
-    private static final ArrayList<SearchReleaseItem> searchResultList =  new ArrayList<>();
+    private static final ArrayList<ReleaseSearchItem> searchResultList =  new ArrayList<>();
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -92,7 +92,7 @@ public class SearchFragment extends Fragment {
 
     public void updateList(){
         listView.removeAllViews();
-        for (SearchReleaseItem item: searchResultList) {
+        for (ReleaseSearchItem item: searchResultList) {
             Context context = this.getContext();
             if (context != null) {
                 View view = View.inflate(context, R.layout.search_release_item, null);
@@ -101,8 +101,7 @@ public class SearchFragment extends Fragment {
                 image.setImageBitmap(item.image);
 
                 TextView title = view.findViewById(R.id.title);
-
-                title.setText(AppBase.textFormatter(context, item.title, null));
+                title.setText(item.title);
 
                 TextView description = view.findViewById(R.id.description);
                 if (item.description != null) {
@@ -217,19 +216,19 @@ public class SearchFragment extends Fragment {
             Elements items = list.getElementsByClass("item");
 
             for (Element item: items) {
-                SearchReleaseItem searchItem = new SearchReleaseItem();
+                ReleaseSearchItem searchItem = new ReleaseSearchItem();
 
                 Element image_container = item.getElementsByClass("image").get(0);
                 Element reference_container = image_container.getElementsByTag("a").get(0);
                 searchItem.reference = reference_container.attributes().get("href");
 
                 Element image = reference_container.getElementsByTag("img").get(0);
-                searchItem.image = AppBase.loadImageFromURL(image.attributes().get("src"));
+                searchItem.image = Network.getImageFromURL(image.attributes().get("src"));
 
                 Element info_container = item.getElementsByClass("info").get(0);
 
                 Element title_container = info_container.getElementsByClass("title").get(0);
-                searchItem.title = title_container.getElementsByTag("a").get(0).html();
+                searchItem.title = AppBase.htmlToText(title_container.getElementsByTag("a").get(0), getApplicationContext());
 
                 Elements description_check = info_container.getElementsByClass("teaser");
                 if (description_check.size() != 0){

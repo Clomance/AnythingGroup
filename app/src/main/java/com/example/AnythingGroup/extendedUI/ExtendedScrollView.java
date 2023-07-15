@@ -6,10 +6,6 @@ import android.view.View;
 import android.widget.ScrollView;
 
 public class ExtendedScrollView extends ScrollView {
-    public interface OnScrollListener {
-        void onEndReached(ExtendedScrollView scrollView);
-    }
-
     private OnScrollListener mOnScrollListener;
 
     public ExtendedScrollView(Context context) {
@@ -40,5 +36,9 @@ public class ExtendedScrollView extends ScrollView {
 
     public void setOnScrollListener(OnScrollListener mOnEndScrollListener) {
         this.mOnScrollListener = mOnEndScrollListener;
+    }
+
+    public interface OnScrollListener {
+        void onEndReached(ExtendedScrollView scrollView);
     }
 }

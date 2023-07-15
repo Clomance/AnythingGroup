@@ -22,7 +22,7 @@ public class TitleMain implements Parcelable {
         image = in.readParcelable(Bitmap.class.getClassLoader());
     }
 
-    public static final Creator<TitleMain> CREATOR = new Creator<TitleMain>() {
+    public static final Creator<TitleMain> CREATOR = new Creator<>() {
         @Override
         public TitleMain createFromParcel(Parcel in) {
             return new TitleMain(in);

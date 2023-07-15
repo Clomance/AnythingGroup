@@ -1,4 +1,4 @@
-package com.example.AnythingGroup;
+package com.example.AnythingGroup.activities;
 
 import android.os.Bundle;
 import android.view.Menu;
@@ -15,6 +15,8 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
+import com.example.AnythingGroup.AppBase;
+import com.example.AnythingGroup.R;
 import com.google.android.material.navigation.NavigationView;
 
 import java.util.Objects;
@@ -68,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Добавляем все страницы для возможности перехода
         mAppBarConfiguration = new AppBarConfiguration.Builder(
-//                R.id.fragment_my_profile,
+                R.id.fragment_my_profile,
                 R.id.fragment_news,
                 R.id.fragment_releases,
                 R.id.fragment_authorization,
@@ -98,7 +100,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onSupportNavigateUp() {
-//        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
         return NavigationUI.navigateUp(navController, mAppBarConfiguration) || super.onSupportNavigateUp();
     }
 

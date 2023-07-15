@@ -21,7 +21,7 @@ import androidx.work.WorkerParameters;
 
 import com.example.AnythingGroup.AppBase;
 import com.example.AnythingGroup.LoadWorker;
-import com.example.AnythingGroup.MainActivity;
+import com.example.AnythingGroup.activities.MainActivity;
 import com.example.AnythingGroup.Network;
 import com.example.AnythingGroup.R;
 
@@ -114,7 +114,7 @@ public class SignInSubfragment extends Fragment {
                             break;
 
                         case CANCELLED:
-                            AppBase.Authorized = false;
+                            AppBase.user.authorized = false;
                         default:
                             return;
                     }
@@ -145,7 +145,7 @@ public class SignInSubfragment extends Fragment {
                     .method(Connection.Method.GET)
                     .execute();
 
-            Network.cookies = response.cookies();
+            Network.cookies.putAll(response.cookies());
 
             Document document = response.parse();
 
@@ -174,7 +174,7 @@ public class SignInSubfragment extends Fragment {
                     .method(Connection.Method.POST)
                     .execute();
 
-            Network.cookies = response.cookies();
+            Network.cookies.putAll(response.cookies());
 
             document = response.parse();
 
@@ -182,9 +182,9 @@ public class SignInSubfragment extends Fragment {
             if (check_sign_in.size() != 0){
                 Log.wtf("SignIn", "Ok");
 
-                AppBase.Authorized = true;
-                AppBase.ProfileEmail = email;
-                AppBase.ProfilePassword = password;
+                AppBase.user.authorized = true;
+                AppBase.user.email = email;
+                AppBase.user.password = password;
                 AppBase.saveLoginPassword();
             }
             else{
@@ -201,13 +201,13 @@ public class SignInSubfragment extends Fragment {
             String profile_reference = profile_id_container.getElementsByTag("a").get(0).attributes().get("href");
             int profile_id_divider = profile_reference.lastIndexOf("/");
             String profile_id = profile_reference.substring(profile_id_divider + 1);
-            AppBase.ProfileMain.id = Integer.parseInt(profile_id);
+            AppBase.user.mainInfo.id = Integer.parseInt(profile_id);
 
             Log.wtf("ProfileId", profile_id);
 
             // Имя профиля
             Element profile_name_container = profile_info_container.getElementsByClass("name").get(0);
-            AppBase.ProfileMain.name = profile_name_container.getElementsByTag("a").html().trim();
+            AppBase.user.mainInfo.name = profile_name_container.getElementsByTag("a").html().trim();
 
             return null;
         }

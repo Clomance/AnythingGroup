@@ -8,7 +8,7 @@ import android.widget.ImageView;
 import android.widget.MediaController;
 
 import com.example.AnythingGroup.R;
-import com.example.AnythingGroup.VideoViewActivity;
+import com.example.AnythingGroup.activities.VideoViewActivity;
 
 // Собственный видеоконтроллер
 // Нужен, чтобы добавить новые элементы управления,
